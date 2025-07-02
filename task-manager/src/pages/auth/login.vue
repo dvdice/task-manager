@@ -2,6 +2,15 @@
     <div class="flex justify-center items-center min-h-screen">
         <div class="flex flex-col gap-8 items-center">
             <h1 class="text-3xl font-bold">Вход</h1>
+
+            <v-alert
+                v-if="errorMessage"
+                type="error"
+                class="w-[700px]"
+            >
+                {{ errorMessage }}
+            </v-alert>
+
             <v-text-field
                 v-model="form.email"
                 class="w-[700px]"
@@ -35,6 +44,8 @@ import {email, helpers, minLength, required} from '@vuelidate/validators'
 import {computed, type Ref} from "vue";
 import type {LoginForm} from "@/types/LoginForm.ts";
 import { useUserStore } from "@/stores/userList";
+import { AuthService } from "@/api/auth";
+import bcrypt from 'bcryptjs'
 
 const userStore = useUserStore();
 
@@ -57,6 +68,7 @@ const form = ref<LoginForm>({
 
 const $v = useVuelidate(rules, form);
 const isSubmitting: Ref<boolean> = ref(false);
+const errorMessage: Ref<string> = ref('');
 
 
 const login = (async () => {
@@ -65,11 +77,22 @@ const login = (async () => {
         const isValid = await $v.value.$validate()
         if (!isValid) return
 
+        const users = await AuthService.login(form.value.email, form.value.password)
+
+        if (users.length === 0) {
+            errorMessage.value = 'Неверный email или пароль';
+            return
+        }
+
         console.log('Форма валидна')
         if (!userStore.getUserById(form.value.id)){
             userStore.add({email: form.value.email, id: form.value.id})
         }
 
+
+    } catch (error) {
+        console.error('Ошибка авторизации:', error)
+        errorMessage.value = 'Ошибка сервера';
     } finally {
         isSubmitting.value = false;
     }
