@@ -18,6 +18,8 @@ import { createApp } from 'vue'
 import 'unfonts.css'
 
 import './styles.css' // Импорт из корня проекта
+import '@mdi/font/css/materialdesignicons.css'
+
 const app = createApp(App)
 
 registerPlugins(app)
